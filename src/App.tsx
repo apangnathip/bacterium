@@ -13,30 +13,31 @@ export type Flags = {
 };
 
 function App() {
-  const [gridObj, setGrid] = useState<GridObject>({ grid: [], size: 50 });
+  const [gridObj, setGrid] = useState<GridObject>({ grid: [], size: 0 });
   const [flags, setFlag] = useState<Flags>({
     continue: false,
     step: false,
     reset: false,
-    showGap: true,
+    showGap: false,
   });
 
   useEffect(() => {
     const rows: boolean[][] = [];
-    for (let i = 0; i < gridObj.size; i++) {
+    const size = 50;
+    for (let i = 0; i < size; i++) {
       const row = [];
-      for (let j = 0; j < gridObj.size; j++) {
+      for (let j = 0; j < size; j++) {
         row.push(false);
       }
       rows.push(row);
     }
-    setGrid({ grid: rows, size: gridObj.size });
+    setGrid({ grid: rows, size: size });
   }, []);
 
   return (
     <>
       <Controls />
-      <Canvas gridObj={gridObj} flags={flags} />
+      <Canvas gridObj={gridObj} setGrid={setGrid} flags={flags} />
     </>
   );
 }
