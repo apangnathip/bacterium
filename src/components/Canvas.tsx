@@ -97,12 +97,11 @@ const Canvas = ({
   flags: Flags;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const requestRef = useRef<number>(0);
   let canvas: HTMLCanvasElement | null;
   let ctx: CanvasRenderingContext2D | null;
   let [mouse, setMouse] = useState({ x: 0, y: 0, isClicked: false });
-  let now: number;
   let then: number;
-  let frameID: number;
 
   useEffect(() => {
     canvas = canvasRef.current;
@@ -114,32 +113,25 @@ const Canvas = ({
     ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    then = Date.now();
-    frameID = requestAnimationFrame(animate);
-
-    return () => {
-      cancelAnimationFrame(frameID);
-    };
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current);
   }, [canvasRef.current]);
 
-  useEffect(() => {
-    console.log("its changed");
-    console.log(flags.fps);
-    // cancelAnimationFrame(frameID);
-  }, [flags.fps]);
-
-  const animate = () => {
+  const animate = (time: number) => {
     if (!ctx || !canvas) return;
     requestAnimationFrame(animate);
+
+    if (!then) {
+      then = time;
+    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGrid(canvas, ctx, gridObj, flags);
 
     // update grid by a set interval
-    now = Date.now();
-    let elapsed = now - then;
-    if (elapsed > 1000 / flags.fps) {
-      then = now - (elapsed % (1000 / flags.fps));
+    let delta = time - then;
+    if (delta > 1000 / flags.fps) {
+      then = time - (delta % (1000 / flags.fps));
       updateGrid(gridObj);
     }
   };
