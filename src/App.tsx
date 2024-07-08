@@ -20,7 +20,7 @@ function App() {
     continue: false,
     reset: false,
     showGap: false,
-    fps: 10,
+    fps: 1,
   });
 
   return (

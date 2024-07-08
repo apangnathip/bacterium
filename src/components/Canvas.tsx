@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Flags } from "../App";
 import "./Canvas.css";
 
@@ -137,136 +137,138 @@ const updateGrid = (gridObj: GridObject) => {
   }
 };
 
-const Canvas = ({
-  gridObj,
-  setGrid,
-  flags,
-  setFlags,
-}: {
-  gridObj: GridObject;
-  setGrid: React.Dispatch<React.SetStateAction<GridObject>>;
-  flags: Flags;
-  setFlags: React.Dispatch<React.SetStateAction<Flags>>;
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const requestRef = useRef(0);
-  const runRef = useRef(true);
-  const fpsRef = useRef(1);
-  const mouseRef = useRef({
-    startX: 0,
-    startY: 0,
-    x: 0,
-    y: 0,
-    isClicked: false,
-    button: 0,
-  });
+const Canvas = memo(
+  ({
+    gridObj,
+    setGrid,
+    flags,
+    setFlags,
+  }: {
+    gridObj: GridObject;
+    setGrid: React.Dispatch<React.SetStateAction<GridObject>>;
+    flags: Flags;
+    setFlags: React.Dispatch<React.SetStateAction<Flags>>;
+  }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const requestRef = useRef(0);
+    const flagRef = useRef(flags);
+    const mouseRef = useRef({
+      startX: 0,
+      startY: 0,
+      x: 0,
+      y: 0,
+      isClicked: false,
+      button: 0,
+    });
 
-  let canvas: HTMLCanvasElement | null;
-  let ctx: CanvasRenderingContext2D | null;
-  let then: number;
+    let canvas: HTMLCanvasElement | null;
+    let ctx: CanvasRenderingContext2D | null;
+    let then: number;
 
-  useEffect(() => {
-    canvas = canvasRef.current;
-    if (!canvas) return;
+    useEffect(() => {
+      canvas = canvasRef.current;
+      if (!canvas) return;
 
-    ctx = canvas.getContext("2d");
-    if (!ctx) return;
+      ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-    requestRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, [canvasRef.current]);
+      requestRef.current = requestAnimationFrame(animate);
+      return () => cancelAnimationFrame(requestRef.current);
+    }, []);
 
-  useEffect(() => {
-    runRef.current = flags.continue;
-    fpsRef.current = flags.fps;
-    if (flags.reset) {
-      gridObj.grid = createNewGrid(gridObj.size);
-      setFlags((prev) => ({ ...prev, reset: false }));
-    }
-  }, [flags]);
+    useEffect(() => {
+      flagRef.current = flags;
+      if (flags.reset) {
+        gridObj.grid = createNewGrid(gridObj.size);
+        setFlags((prev) => ({ ...prev, reset: false }));
+      }
+    }, [flags]);
 
-  const animate = (time: number) => {
-    if (!ctx || !canvas) return;
-    requestAnimationFrame(animate);
+    const animate = (time: number) => {
+      if (!ctx || !canvas) return;
+      requestAnimationFrame(animate);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGrid(canvas, ctx, gridObj, flags);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid(canvas, ctx, gridObj, flags);
+      if (!flagRef.current.continue) return;
 
-    // update grid by a set interval
-    then = then ?? time;
-    let delta = time - then;
-    if (runRef.current && delta > 1000 / fpsRef.current) {
-      then = time - (delta % (1000 / fpsRef.current));
-      updateGrid(gridObj);
-    }
-  };
+      // update grid by a set interval
+      then = then ?? time;
+      let delta = time - then;
+      if (delta > 1000 / flagRef.current.fps) {
+        then = time - (delta % (1000 / flagRef.current.fps));
+        updateGrid(gridObj);
+      }
+    };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    mouseRef.current.x = e.clientX;
-    mouseRef.current.y = e.clientY;
+    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      mouseRef.current.x = e.clientX;
+      mouseRef.current.y = e.clientY;
 
-    if (!mouseRef.current.isClicked) return;
+      if (!mouseRef.current.isClicked) return;
 
-    let dist = Math.hypot(
-      mouseRef.current.x - mouseRef.current.startX,
-      mouseRef.current.y - mouseRef.current.startY,
-    );
-
-    for (let i = 0; i < dist; i++) {
-      const lerpX =
-        mouseRef.current.startX +
-        (mouseRef.current.x - mouseRef.current.startX) * (i / dist);
-      const lerpY =
-        mouseRef.current.startY +
-        (mouseRef.current.y - mouseRef.current.startY) * (i / dist);
-      const [gridRow, gridCol] = getCoords(
-        lerpX,
-        lerpY,
-        gridObj.size,
-        gridObj.cellSize,
-        flags.showGap ? 0.5 : 0,
+      let dist = Math.hypot(
+        mouseRef.current.x - mouseRef.current.startX,
+        mouseRef.current.y - mouseRef.current.startY,
       );
 
-      if (
-        gridCol >= 0 &&
-        gridRow >= 0 &&
-        gridCol < gridObj.size &&
-        gridRow < gridObj.size
-      ) {
-        switch (mouseRef.current.button) {
-          case 0:
-            gridObj.grid[gridRow][gridCol] = CellState.New;
-            break;
-          case 2:
-            gridObj.grid[gridRow][gridCol] = CellState.Empty;
-            break;
+      for (let i = 0; i < dist; i++) {
+        const lerpX =
+          mouseRef.current.startX +
+          (mouseRef.current.x - mouseRef.current.startX) * (i / dist);
+        const lerpY =
+          mouseRef.current.startY +
+          (mouseRef.current.y - mouseRef.current.startY) * (i / dist);
+        const [gridRow, gridCol] = getCoords(
+          lerpX,
+          lerpY,
+          gridObj.size,
+          gridObj.cellSize,
+          flags.showGap ? 0.5 : 0,
+        );
+
+        if (
+          gridCol >= 0 &&
+          gridRow >= 0 &&
+          gridCol < gridObj.size &&
+          gridRow < gridObj.size
+        ) {
+          switch (mouseRef.current.button) {
+            case 0:
+              gridObj.grid[gridRow][gridCol] = CellState.New;
+              break;
+            case 2:
+              gridObj.grid[gridRow][gridCol] = CellState.Empty;
+              break;
+          }
         }
       }
-    }
 
-    mouseRef.current.startX = mouseRef.current.x;
-    mouseRef.current.startY = mouseRef.current.y;
-  };
+      mouseRef.current.startX = mouseRef.current.x;
+      mouseRef.current.startY = mouseRef.current.y;
+    };
 
-  const handleMouseClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    mouseRef.current.isClicked = !mouseRef.current.isClicked;
-    mouseRef.current.button = e.button;
-    mouseRef.current.startX = e.clientX;
-    mouseRef.current.startY = e.clientY;
-  };
+    const handleMouseClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      mouseRef.current.isClicked = !mouseRef.current.isClicked;
+      mouseRef.current.button = e.button;
+      mouseRef.current.startX = e.clientX;
+      mouseRef.current.startY = e.clientY;
+    };
 
-  return (
-    <canvas
-      ref={canvasRef}
-      onMouseMove={handleMouseMove}
-      onMouseDown={handleMouseClick}
-      onMouseUp={handleMouseClick}
-      onContextMenu={(e) => e.preventDefault()}
-    />
-  );
-};
+    return (
+      <canvas
+        ref={canvasRef}
+        onMouseMove={handleMouseMove}
+        onMouseDown={handleMouseClick}
+        onMouseUp={handleMouseClick}
+        onMouseLeave={() => (mouseRef.current.isClicked = false)}
+        onContextMenu={(e) => e.preventDefault()}
+      />
+    );
+  },
+);
 
 export default Canvas;
