@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import { Flags } from "../App";
 import "./Canvas.css";
 
-export type GridObject = { grid: CellState[][]; size: number };
+export type GridObject = {
+  grid: CellState[][];
+  size: number;
+  cellSize: number;
+};
 
 enum CellState {
   Empty,
@@ -31,16 +35,42 @@ const getCenterOffset = (
   return Math.round((length - gridSize * (cellSize + gap)) / 2);
 };
 
+const getCoords = (
+  x: number,
+  y: number,
+  size: number,
+  cellSize: number,
+  gap: number,
+) => {
+  const offsetX = getCenterOffset(window.innerWidth, size, cellSize, gap);
+  const offsetY = getCenterOffset(window.innerHeight, size, cellSize, gap);
+
+  // convert mouseRef.current position to grid position, i.e. which cell the mouse is in
+  const gridPixelSize = size * (cellSize + gap);
+  const gridCol = Math.floor(((x - offsetX) * size) / gridPixelSize);
+  const gridRow = Math.floor(((y - offsetY) * size) / gridPixelSize);
+  return [gridRow, gridCol];
+};
+
 const drawGrid = (
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
   gridObj: GridObject,
   flags: Flags,
 ) => {
-  const cellSize = (1 / gridObj.size) * 600;
   const gap = flags.showGap ? 0.5 : 0;
-  const offsetX = getCenterOffset(canvas.width, gridObj.size, cellSize, gap);
-  const offsetY = getCenterOffset(canvas.height, gridObj.size, cellSize, gap);
+  const offsetX = getCenterOffset(
+    canvas.width,
+    gridObj.size,
+    gridObj.cellSize,
+    gap,
+  );
+  const offsetY = getCenterOffset(
+    canvas.height,
+    gridObj.size,
+    gridObj.cellSize,
+    gap,
+  );
 
   for (let i = 0; i < gridObj.size; i++) {
     for (let j = 0; j < gridObj.size; j++) {
@@ -56,10 +86,10 @@ const drawGrid = (
           break;
       }
       ctx.fillRect(
-        j * (cellSize + gap) + offsetX,
-        i * (cellSize + gap) + offsetY,
-        cellSize,
-        cellSize,
+        j * (gridObj.cellSize + gap) + offsetX,
+        i * (gridObj.cellSize + gap) + offsetY,
+        gridObj.cellSize,
+        gridObj.cellSize,
       );
     }
   }
@@ -120,9 +150,17 @@ const Canvas = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef(0);
-  const mouseRef = useRef({ x: 0, y: 0, isClicked: false });
   const runRef = useRef(true);
   const fpsRef = useRef(1);
+  const mouseRef = useRef({
+    startX: 0,
+    startY: 0,
+    x: 0,
+    y: 0,
+    isClicked: false,
+    button: 0,
+  });
+
   let canvas: HTMLCanvasElement | null;
   let ctx: CanvasRenderingContext2D | null;
   let then: number;
@@ -172,46 +210,61 @@ const Canvas = ({
 
     if (!mouseRef.current.isClicked) return;
 
-    const cellSize = (1 / gridObj.size) * 600;
-    const gap = flags.showGap ? 0.5 : 0;
-    const offsetX = getCenterOffset(
-      window.innerWidth,
-      gridObj.size,
-      cellSize,
-      gap,
-    );
-    const offsetY = getCenterOffset(
-      window.innerHeight,
-      gridObj.size,
-      cellSize,
-      gap,
+    let dist = Math.hypot(
+      mouseRef.current.x - mouseRef.current.startX,
+      mouseRef.current.y - mouseRef.current.startY,
     );
 
-    // convert mouseRef.current position to grid position, i.e. which cell the mouse is in
-    const gridPixelSize = gridObj.size * (cellSize + gap);
-    const gridCol = Math.floor(
-      ((mouseRef.current.x - offsetX) * gridObj.size) / gridPixelSize,
-    );
-    const gridRow = Math.floor(
-      ((mouseRef.current.y - offsetY) * gridObj.size) / gridPixelSize,
-    );
+    for (let i = 0; i < dist; i++) {
+      const lerpX =
+        mouseRef.current.startX +
+        (mouseRef.current.x - mouseRef.current.startX) * (i / dist);
+      const lerpY =
+        mouseRef.current.startY +
+        (mouseRef.current.y - mouseRef.current.startY) * (i / dist);
+      const [gridRow, gridCol] = getCoords(
+        lerpX,
+        lerpY,
+        gridObj.size,
+        gridObj.cellSize,
+        flags.showGap ? 0.5 : 0,
+      );
 
-    if (
-      gridCol >= 0 &&
-      gridRow >= 0 &&
-      gridCol < gridObj.size &&
-      gridRow < gridObj.size
-    ) {
-      gridObj.grid[gridRow][gridCol] = CellState.New;
+      if (
+        gridCol >= 0 &&
+        gridRow >= 0 &&
+        gridCol < gridObj.size &&
+        gridRow < gridObj.size
+      ) {
+        switch (mouseRef.current.button) {
+          case 0:
+            gridObj.grid[gridRow][gridCol] = CellState.New;
+            break;
+          case 2:
+            gridObj.grid[gridRow][gridCol] = CellState.Empty;
+            break;
+        }
+      }
     }
+
+    mouseRef.current.startX = mouseRef.current.x;
+    mouseRef.current.startY = mouseRef.current.y;
+  };
+
+  const handleMouseClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    mouseRef.current.isClicked = !mouseRef.current.isClicked;
+    mouseRef.current.button = e.button;
+    mouseRef.current.startX = e.clientX;
+    mouseRef.current.startY = e.clientY;
   };
 
   return (
     <canvas
       ref={canvasRef}
       onMouseMove={handleMouseMove}
-      onMouseDown={() => (mouseRef.current.isClicked = true)}
-      onMouseUp={() => (mouseRef.current.isClicked = false)}
+      onMouseDown={handleMouseClick}
+      onMouseUp={handleMouseClick}
+      onContextMenu={(e) => e.preventDefault()}
     />
   );
 };

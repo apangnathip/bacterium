@@ -11,19 +11,17 @@ export type Flags = {
 };
 
 function App() {
-  const [gridObj, setGrid] = useState<GridObject>({ grid: [], size: 0 });
+  const [gridObj, setGrid] = useState<GridObject>({
+    grid: createNewGrid(100),
+    size: 100,
+    cellSize: (1 / 100) * 800,
+  });
   const [flags, setFlags] = useState<Flags>({
     continue: false,
     reset: false,
     showGap: false,
     fps: 10,
   });
-
-  useEffect(() => {
-    const size = 100;
-    const rows = createNewGrid(size);
-    setGrid({ grid: rows, size: size });
-  }, []);
 
   return (
     <>
