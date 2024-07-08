@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { Flags } from "../App";
 import "./Canvas.css";
-import { CellState, Flags, GridObject } from "../App";
+
+export type GridObject = { grid: CellState[][]; size: number };
+
+enum CellState {
+  Empty,
+  Alive,
+  New,
+}
 
 export const createNewGrid = (size: number) => {
   const rows: CellState[][] = [];

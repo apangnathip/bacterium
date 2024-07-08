@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import Canvas, { createNewGrid } from "./components/Canvas";
+import Canvas, { createNewGrid, GridObject } from "./components/Canvas";
 import Controls from "./components/Controls";
-
-export enum CellState {
-  Empty,
-  Alive,
-  New,
-}
-export type GridObject = { grid: CellState[][]; size: number };
 
 export type Flags = {
   continue: boolean;
