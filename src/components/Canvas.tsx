@@ -3,27 +3,54 @@ import { Flags } from "../App";
 import "./Canvas.css";
 
 export type GridObject = {
-  grid: CellState[][];
+  grid: (Cell | null)[][];
   size: number;
   cellSize: number;
 };
 
-enum CellState {
-  Empty,
-  Alive,
-  New,
+export class Cell {
+  age: number;
+  color: string;
+  grownColor: string;
+  birthColor: string;
+  constructor() {
+    this.age = 1;
+    this.grownColor = "rgb(72, 46, 116)";
+    this.birthColor = "rgb(255, 193, 255)";
+    this.color = this.birthColor;
+  }
+
+  getColorByAge() {
+    const r = lerp(255, 72, this.age / 10);
+    const g = lerp(193, 46, this.age / 10);
+    const b = lerp(255, 116, this.age / 10);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  update() {
+    if (this.age > 10) {
+      this.color = this.grownColor;
+      return;
+    }
+    this.color = this.getColorByAge();
+    this.age++;
+  }
 }
 
 export const createNewGrid = (size: number) => {
-  const rows: CellState[][] = [];
+  const rows: (Cell | null)[][] = [];
   for (let i = 0; i < size; i++) {
     const row = [];
     for (let j = 0; j < size; j++) {
-      row.push(CellState.Empty);
+      row.push(null);
     }
     rows.push(row);
   }
   return rows;
+};
+
+const lerp = (a: number, b: number, alpha: number) => {
+  return a * (1 - alpha) + b * alpha;
 };
 
 const getCenterOffset = (
@@ -74,17 +101,12 @@ const drawGrid = (
 
   for (let i = 0; i < gridObj.size; i++) {
     for (let j = 0; j < gridObj.size; j++) {
-      switch (gridObj.grid[i][j]) {
-        case CellState.Empty:
-          ctx.fillStyle = `rgb(25, 23, 36)`;
-          break;
-        case CellState.Alive:
-          ctx.fillStyle = "gray";
-          break;
-        case CellState.New:
-          ctx.fillStyle = "rgb(255, 255, 255)";
-          break;
+      if (!gridObj.grid[i][j]) {
+        ctx.fillStyle = `rgb(25, 23, 36)`;
+      } else {
+        ctx.fillStyle = gridObj.grid[i][j]!.color;
       }
+
       ctx.fillRect(
         j * (gridObj.cellSize + gap) + offsetX,
         i * (gridObj.cellSize + gap) + offsetY,
@@ -106,7 +128,7 @@ const updateGrid = (gridObj: GridObject) => {
       if (!gridObj.grid[i][j] || flattenCoords(i, j, gridObj.size) in newCells)
         continue;
 
-      gridObj.grid[i][j] = CellState.Alive;
+      gridObj.grid[i][j]!.update();
 
       let neighbours = [
         // cardinal directions
@@ -129,7 +151,7 @@ const updateGrid = (gridObj: GridObject) => {
           y < gridObj.size &&
           !gridObj.grid[x][y]
         ) {
-          gridObj.grid[x][y] = CellState.New;
+          gridObj.grid[x][y] = new Cell();
           newCells[flattenCoords(x, y, gridObj.size)] = true;
         }
       }
@@ -238,10 +260,10 @@ const Canvas = memo(
         ) {
           switch (mouseRef.current.button) {
             case 0:
-              gridObj.grid[gridRow][gridCol] = CellState.New;
+              gridObj.grid[gridRow][gridCol] = new Cell();
               break;
             case 2:
-              gridObj.grid[gridRow][gridCol] = CellState.Empty;
+              gridObj.grid[gridRow][gridCol] = null;
               break;
           }
         }
