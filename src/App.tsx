@@ -11,10 +11,11 @@ export type Flags = {
 };
 
 function App() {
+  const size = 100;
   const [gridObj, setGrid] = useState<GridObject>({
-    grid: createNewGrid(100),
-    size: 100,
-    cellSize: (1 / 100) * 800,
+    grid: createNewGrid(size),
+    size: size,
+    cellSize: (1 / size) * 800,
   });
   const [flags, setFlags] = useState<Flags>({
     continue: false,
