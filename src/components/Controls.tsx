@@ -21,6 +21,16 @@ const Controls = ({
       <button onClick={() => setFlags((prev) => ({ ...prev, reset: true }))}>
         Reset
       </button>
+      <input
+        type="range"
+        min="1"
+        max="25"
+        step="1"
+        defaultValue={flags.fps}
+        onChange={(e) => {
+          setFlags((prev) => ({ ...prev, fps: parseInt(e.target.value) }));
+        }}
+      ></input>
     </div>
   );
 };

@@ -122,6 +122,7 @@ const Canvas = ({
   const requestRef = useRef(0);
   const mouseRef = useRef({ x: 0, y: 0, isClicked: false });
   const runRef = useRef(true);
+  const fpsRef = useRef(1);
   let canvas: HTMLCanvasElement | null;
   let ctx: CanvasRenderingContext2D | null;
   let then: number;
@@ -142,6 +143,7 @@ const Canvas = ({
 
   useEffect(() => {
     runRef.current = flags.continue;
+    fpsRef.current = flags.fps;
     if (flags.reset) {
       gridObj.grid = createNewGrid(gridObj.size);
       setFlags((prev) => ({ ...prev, reset: false }));
@@ -158,8 +160,8 @@ const Canvas = ({
     // update grid by a set interval
     then = then ?? time;
     let delta = time - then;
-    if (runRef.current && delta > 1000 / flags.fps) {
-      then = time - (delta % (1000 / flags.fps));
+    if (runRef.current && delta > 1000 / fpsRef.current) {
+      then = time - (delta % (1000 / fpsRef.current));
       updateGrid(gridObj);
     }
   };
