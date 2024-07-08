@@ -2,6 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import "./Canvas.css";
 import { CellState, Flags, GridObject } from "../App";
 
+export const createNewGrid = (size: number) => {
+  const rows: CellState[][] = [];
+  for (let i = 0; i < size; i++) {
+    const row = [];
+    for (let j = 0; j < size; j++) {
+      row.push(CellState.Empty);
+    }
+    rows.push(row);
+  }
+  return rows;
+};
+
 const getCenterOffset = (
   length: number,
   gridSize: number,
@@ -91,56 +103,64 @@ const Canvas = ({
   gridObj,
   setGrid,
   flags,
+  setFlags,
 }: {
   gridObj: GridObject;
   setGrid: React.Dispatch<React.SetStateAction<GridObject>>;
   flags: Flags;
+  setFlags: React.Dispatch<React.SetStateAction<Flags>>;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const requestRef = useRef<number>(0);
+  const requestRef = useRef(0);
+  const mouseRef = useRef({ x: 0, y: 0, isClicked: false });
+  const runRef = useRef(true);
   let canvas: HTMLCanvasElement | null;
   let ctx: CanvasRenderingContext2D | null;
-  let [mouse, setMouse] = useState({ x: 0, y: 0, isClicked: false });
   let then: number;
 
   useEffect(() => {
     canvas = canvasRef.current;
     if (!canvas) return;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
     ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     requestRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(requestRef.current);
   }, [canvasRef.current]);
 
+  useEffect(() => {
+    runRef.current = flags.continue;
+    if (flags.reset) {
+      gridObj.grid = createNewGrid(gridObj.size);
+      setFlags((prev) => ({ ...prev, reset: false }));
+    }
+  }, [flags]);
+
   const animate = (time: number) => {
     if (!ctx || !canvas) return;
     requestAnimationFrame(animate);
-
-    if (!then) {
-      then = time;
-    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGrid(canvas, ctx, gridObj, flags);
 
     // update grid by a set interval
+    then = then ?? time;
     let delta = time - then;
-    if (delta > 1000 / flags.fps) {
+    if (runRef.current && delta > 1000 / flags.fps) {
       then = time - (delta % (1000 / flags.fps));
       updateGrid(gridObj);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
+    mouseRef.current.x = e.clientX;
+    mouseRef.current.y = e.clientY;
 
-    if (!mouse.isClicked) return;
+    if (!mouseRef.current.isClicked) return;
 
     const cellSize = (1 / gridObj.size) * 600;
     const gap = flags.showGap ? 0.5 : 0;
@@ -157,13 +177,13 @@ const Canvas = ({
       gap,
     );
 
-    // convert mouse position to grid position, i.e. which cell the mouse is in
+    // convert mouseRef.current position to grid position, i.e. which cell the mouse is in
     const gridPixelSize = gridObj.size * (cellSize + gap);
     const gridCol = Math.floor(
-      ((mouse.x - offsetX) * gridObj.size) / gridPixelSize,
+      ((mouseRef.current.x - offsetX) * gridObj.size) / gridPixelSize,
     );
     const gridRow = Math.floor(
-      ((mouse.y - offsetY) * gridObj.size) / gridPixelSize,
+      ((mouseRef.current.y - offsetY) * gridObj.size) / gridPixelSize,
     );
 
     if (
@@ -172,9 +192,7 @@ const Canvas = ({
       gridCol < gridObj.size &&
       gridRow < gridObj.size
     ) {
-      const newGrid = gridObj.grid;
-      newGrid[gridRow][gridCol] = CellState.New;
-      setGrid({ grid: newGrid, size: gridObj.size });
+      gridObj.grid[gridRow][gridCol] = CellState.New;
     }
   };
 
@@ -182,8 +200,8 @@ const Canvas = ({
     <canvas
       ref={canvasRef}
       onMouseMove={handleMouseMove}
-      onMouseDown={() => setMouse((prev) => ({ ...prev, isClicked: true }))}
-      onMouseUp={() => setMouse((prev) => ({ ...prev, isClicked: false }))}
+      onMouseDown={() => (mouseRef.current.isClicked = true)}
+      onMouseUp={() => (mouseRef.current.isClicked = false)}
     />
   );
 };

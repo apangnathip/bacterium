@@ -3,22 +3,24 @@ import "./Controls.css";
 import { Flags } from "../App";
 
 const Controls = ({
+  flags,
   setFlags,
 }: {
+  flags: Flags;
   setFlags: React.Dispatch<React.SetStateAction<Flags>>;
 }) => {
   return (
     <div className="bar">
-      <button>Start</button>
       <button
-        onClick={() => {
-          setFlags((prev) => ({ ...prev, fps: 0 }));
-        }}
+        onClick={() =>
+          setFlags((prev) => ({ ...prev, continue: !prev.continue }))
+        }
       >
-        Pause
+        {flags.continue ? "Stop" : "Start"}
       </button>
-      <button>Step</button>
-      <button>Reset</button>
+      <button onClick={() => setFlags((prev) => ({ ...prev, reset: true }))}>
+        Reset
+      </button>
     </div>
   );
 };
