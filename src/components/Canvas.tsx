@@ -96,6 +96,14 @@ const drawGrid = (
   }
 };
 
+const shuffle = (arr: any[]) => {
+  let newArr = [];
+  let randomIndex = Math.floor(Math.random() * arr.length);
+  let element = arr.splice(randomIndex, 1);
+  newArr.push(element[0]);
+  return newArr;
+};
+
 const updateGrid = (gridObj: GridObject) => {
   let newCells = {} as { [key: number]: boolean };
   for (let i = 0; i < gridObj.size; i++) {
