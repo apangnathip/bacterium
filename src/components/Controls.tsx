@@ -38,6 +38,15 @@ const Controls = ({
         className="icon"
         onClick={() => setFlags((prev) => ({ ...prev, reset: true }))}
       />
+      <button
+        onClick={() =>
+          setFlags((prev) => {
+            return { ...prev, gap: prev.gap ? 0 : 1 };
+          })
+        }
+      >
+        {flags.gap ? "Hide Gap" : "Show Gap"}
+      </button>
       <input
         type="range"
         min="1"

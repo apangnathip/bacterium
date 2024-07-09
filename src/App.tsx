@@ -7,7 +7,7 @@ export type Flags = {
   continue: boolean;
   reset: boolean;
   step: boolean;
-  showGap: boolean;
+  gap: number;
   fps: number;
 };
 
@@ -21,7 +21,7 @@ function App() {
     continue: false,
     reset: false,
     step: false,
-    showGap: false,
+    gap: 0,
     fps: 25,
   });
 

@@ -73,14 +73,11 @@ const getCoords = (
 };
 
 const drawGrid = (
-  canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
   gridObj: GridObject,
   flags: Flags,
+  cellSize: number,
 ) => {
-  const gap = flags.showGap ? 1 : 0;
-  const cellSize = canvas.width / gridObj.size - gap;
-
   for (let i = 0; i < gridObj.size; i++) {
     for (let j = 0; j < gridObj.size; j++) {
       if (!gridObj.grid[i][j]) {
@@ -90,8 +87,8 @@ const drawGrid = (
       }
 
       ctx.fillRect(
-        j * (cellSize + gap),
-        i * (cellSize + gap),
+        j * (cellSize + flags.gap),
+        i * (cellSize + flags.gap),
         cellSize,
         cellSize,
       );
@@ -108,7 +105,7 @@ const updateGrid = (gridObj: GridObject) => {
 
       gridObj.grid[i][j]!.update();
 
-      let neighbours = [
+      let neighbours = shuffle([
         // cardinal directions
         [i - 1, j],
         [i + 1, j],
@@ -119,7 +116,7 @@ const updateGrid = (gridObj: GridObject) => {
         [i - 1, j + 1],
         [i + 1, j - 1],
         [i + 1, j + 1],
-      ].sort(() => Math.random() - 0.5);
+      ]);
 
       for (const [x, y] of neighbours) {
         if (
@@ -191,7 +188,7 @@ const Canvas = memo(
       initCanvas();
       flagRef.current = flags;
 
-      if (flags.reset) {
+      if (flagRef.current.reset) {
         gridObj.grid = createNewGrid(gridObj.size);
         setFlags((prev) => ({ ...prev, reset: false }));
       }
@@ -219,16 +216,22 @@ const Canvas = memo(
       requestAnimationFrame(animate);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGrid(canvas, ctx, gridObj, flags);
+      drawGrid(
+        ctx,
+        gridObj,
+        flagRef.current,
+        canvas.width / gridObj.size - flagRef.current.gap,
+      );
 
-      if (flagRef.current.step) {
-        updateGrid(gridObj);
-        flagRef.current.step = false;
+      if (!flagRef.current.continue) {
+        if (flagRef.current.step) {
+          updateGrid(gridObj);
+          flagRef.current.step = false;
+        }
         return;
       }
 
       // update grid by a set interval
-      if (!flagRef.current.continue) return;
       then = then ?? time;
       let delta = time - then;
       if (delta > 1000 / flagRef.current.fps) {
@@ -248,8 +251,6 @@ const Canvas = memo(
         mouseRef.current.y - mouseRef.current.startY,
       );
 
-      let gap = flags.showGap ? 1 : 0;
-
       for (let i = 0; i < dist; i++) {
         const lerpX =
           mouseRef.current.startX +
@@ -261,8 +262,8 @@ const Canvas = memo(
           lerpX,
           lerpY,
           gridObj.size,
-          canvas.width / gridObj.size - gap,
-          gap,
+          canvas.width / gridObj.size - flagRef.current.gap,
+          flagRef.current.gap,
         );
 
         if (
