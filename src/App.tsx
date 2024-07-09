@@ -7,6 +7,7 @@ export type Flags = {
   continue: boolean;
   reset: boolean;
   step: boolean;
+  draw: boolean;
   gap: number;
   fps: number;
 };
@@ -21,6 +22,7 @@ function App() {
     continue: false,
     reset: false,
     step: false,
+    draw: true,
     gap: 0,
     fps: 25,
   });
@@ -29,12 +31,7 @@ function App() {
     <>
       <Controls flags={flags} setFlags={setFlags} gridObj={gridObj} />
       <div className="canvas-container">
-        <Canvas
-          gridObj={gridObj}
-          setGrid={setGridObj}
-          flags={flags}
-          setFlags={setFlags}
-        />
+        <Canvas gridObj={gridObj} flags={flags} setFlags={setFlags} />
       </div>
     </>
   );

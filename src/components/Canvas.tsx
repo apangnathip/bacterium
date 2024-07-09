@@ -121,12 +121,10 @@ const updateGrid = (gridObj: GridObject) => {
 const Canvas = memo(
   ({
     gridObj,
-    setGrid,
     flags,
     setFlags,
   }: {
     gridObj: GridObject;
-    setGrid: React.Dispatch<React.SetStateAction<GridObject>>;
     flags: Flags;
     setFlags: React.Dispatch<React.SetStateAction<Flags>>;
   }) => {
@@ -139,7 +137,6 @@ const Canvas = memo(
       x: 0,
       y: 0,
       isClicked: false,
-      button: 0,
     });
 
     let canvas: HTMLCanvasElement | null;
@@ -153,6 +150,7 @@ const Canvas = memo(
 
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
         mouseRef.current.isClicked = true;
         handleMouseClick(e);
       });
@@ -255,13 +253,10 @@ const Canvas = memo(
           gridCol < gridObj.size &&
           gridRow < gridObj.size
         ) {
-          switch (mouseRef.current.button) {
-            case 0:
-              gridObj.grid[gridRow][gridCol] = new Cell();
-              break;
-            case 2:
-              gridObj.grid[gridRow][gridCol] = null;
-              break;
+          if (flagRef.current.draw) {
+            gridObj.grid[gridRow][gridCol] = new Cell();
+          } else {
+            gridObj.grid[gridRow][gridCol] = null;
           }
         }
       }
@@ -271,7 +266,6 @@ const Canvas = memo(
     };
 
     const handleMouseClick = (e: MouseEvent) => {
-      mouseRef.current.button = e.button;
       mouseRef.current.startX = e.clientX - rect.left;
       mouseRef.current.startY = e.clientY - rect.top;
     };

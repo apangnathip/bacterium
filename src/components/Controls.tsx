@@ -4,8 +4,10 @@ import { Flags } from "../App";
 import { createNewGrid, GridObject } from "./Canvas";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faEraser,
   faForwardStep,
   faPause,
+  faPencil,
   faPlay,
   faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
@@ -21,23 +23,35 @@ const Controls = ({
 }) => {
   return (
     <div className="bar">
-      <FontAwesomeIcon
-        icon={flags.continue ? faPause : faPlay}
-        className="icon"
+      <button
+        className={flags.draw ? "pressed" : ""}
+        onClick={() => setFlags((prev) => ({ ...prev, draw: true }))}
+      >
+        <FontAwesomeIcon icon={faPencil} />
+      </button>
+      <button
+        className={flags.draw ? "" : "pressed"}
+        onClick={() => setFlags((prev) => ({ ...prev, draw: false }))}
+      >
+        <FontAwesomeIcon icon={faEraser} />
+      </button>
+      <button
         onClick={() =>
           setFlags((prev) => ({ ...prev, continue: !prev.continue }))
         }
-      />
-      <FontAwesomeIcon
-        icon={faForwardStep}
-        className="icon"
-        onClick={() => setFlags((prev) => ({ ...prev, step: true }))}
-      />
-      <FontAwesomeIcon
-        icon={faRotateLeft}
-        className="icon"
-        onClick={() => setFlags((prev) => ({ ...prev, reset: true }))}
-      />
+      >
+        <FontAwesomeIcon icon={flags.continue ? faPause : faPlay} />
+      </button>
+      <button onClick={() => setFlags((prev) => ({ ...prev, step: true }))}>
+        <FontAwesomeIcon icon={faForwardStep} />
+      </button>
+      <button
+        onClick={() =>
+          setFlags((prev) => ({ ...prev, reset: true, draw: true }))
+        }
+      >
+        <FontAwesomeIcon icon={faRotateLeft} />
+      </button>
       <button
         onClick={() =>
           setFlags((prev) => {
