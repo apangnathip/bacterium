@@ -1,3 +1,5 @@
+import { GridObject } from "../components/Canvas";
+
 function lerp(a: number, b: number, alpha: number) {
   return a * (1 - alpha) + b * alpha;
 }
@@ -27,13 +29,12 @@ export function flattenCoords(i: number, j: number, size: number) {
 export function getCoords(
   x: number,
   y: number,
-  size: number,
-  cellSize: number,
+  gridObj: GridObject,
   gap: number,
 ) {
-  const gridPixelSize = size * (cellSize + gap);
-  const gridCol = Math.floor((x * size) / gridPixelSize);
-  const gridRow = Math.floor((y * size) / gridPixelSize);
-
+  const { m } = gridObj.size;
+  const gridPixelSize = m * (gridObj.cellSize + gap);
+  const gridCol = Math.floor((x * m) / gridPixelSize);
+  const gridRow = Math.floor((y * m) / gridPixelSize);
   return [gridRow, gridCol];
 }

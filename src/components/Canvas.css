@@ -1,8 +1,8 @@
-canvas {
-  /* display: flex; */
+.grid {
   z-index: -1;
   top: 0;
   left: 0;
-  width: 80vh;
-  height: 80vh;
+  /* width: 80vh; */
+  /* height: 80vh; */
+  /* height:100% */
 }

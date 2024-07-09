@@ -1,0 +1,15 @@
+.slider-container {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.slider {
+  width: 100%;
+}
+
+.box {
+  width: 4rem;
+  height: 2rem;
+}

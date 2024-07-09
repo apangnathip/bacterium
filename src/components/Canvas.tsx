@@ -10,7 +10,9 @@ import {
 
 export type GridObject = {
   grid: (Cell | null)[][];
-  size: number;
+  size: { n: number; m: number };
+  cellSize: number;
+  cellCount: number;
 };
 
 export class Cell {
@@ -35,11 +37,11 @@ export class Cell {
   }
 }
 
-export const createNewGrid = (size: number) => {
+export const createNewGrid = (n: number, m: number) => {
   const rows: (Cell | null)[][] = [];
-  for (let i = 0; i < size; i++) {
+  for (let i = 0; i < n; i++) {
     const row = [];
-    for (let j = 0; j < size; j++) {
+    for (let j = 0; j < m; j++) {
       row.push(null);
     }
     rows.push(row);
@@ -51,10 +53,9 @@ const drawGrid = (
   ctx: CanvasRenderingContext2D,
   gridObj: GridObject,
   flags: Flags,
-  cellSize: number,
 ) => {
-  for (let i = 0; i < gridObj.size; i++) {
-    for (let j = 0; j < gridObj.size; j++) {
+  for (let i = 0; i < gridObj.size.n; i++) {
+    for (let j = 0; j < gridObj.size.m; j++) {
       if (!gridObj.grid[i][j]) {
         ctx.fillStyle = `rgb(25, 23, 36)`;
       } else {
@@ -62,10 +63,10 @@ const drawGrid = (
       }
 
       ctx.fillRect(
-        j * (cellSize + flags.gap),
-        i * (cellSize + flags.gap),
-        cellSize,
-        cellSize,
+        j * (gridObj.cellSize + flags.gap),
+        i * (gridObj.cellSize + flags.gap),
+        gridObj.cellSize,
+        gridObj.cellSize,
       );
     }
   }
@@ -81,9 +82,12 @@ const shuffle = (arr: any[]) => {
 
 const updateGrid = (gridObj: GridObject) => {
   let newCells = {} as { [key: number]: boolean };
-  for (let i = 0; i < gridObj.size; i++) {
-    for (let j = 0; j < gridObj.size; j++) {
-      if (!gridObj.grid[i][j] || flattenCoords(i, j, gridObj.size) in newCells)
+  for (let i = 0; i < gridObj.size.n; i++) {
+    for (let j = 0; j < gridObj.size.m; j++) {
+      if (
+        !gridObj.grid[i][j] ||
+        flattenCoords(i, j, gridObj.size.n) in newCells
+      )
         continue;
 
       gridObj.grid[i][j]!.update();
@@ -104,13 +108,14 @@ const updateGrid = (gridObj: GridObject) => {
       for (const [x, y] of neighbours) {
         if (
           x >= 0 &&
-          x < gridObj.size &&
           y >= 0 &&
-          y < gridObj.size &&
+          x < gridObj.size.n &&
+          y < gridObj.size.m &&
           !gridObj.grid[x][y]
         ) {
           gridObj.grid[x][y] = new Cell();
-          newCells[flattenCoords(x, y, gridObj.size)] = true;
+          gridObj.cellCount++;
+          newCells[flattenCoords(x, y, gridObj.size.n)] = true;
           break;
         }
       }
@@ -145,7 +150,12 @@ const Canvas = memo(
     let then: number;
 
     useEffect(() => {
-      initCanvas();
+      if (!initCanvas()) return;
+
+      gridObj.size.n = Math.floor(canvas!.height / gridObj.cellSize);
+      gridObj.size.m = Math.floor(canvas!.width / gridObj.cellSize);
+      gridObj.grid = createNewGrid(gridObj.size.n, gridObj.size.m);
+
       requestRef.current = requestAnimationFrame(animate);
 
       window.addEventListener("mousemove", handleMouseMove);
@@ -173,17 +183,21 @@ const Canvas = memo(
       flagRef.current = flags;
 
       if (flagRef.current.reset) {
-        gridObj.grid = createNewGrid(gridObj.size);
+        if (flagRef.current.maximise) {
+          gridObj.size.n = Math.floor(canvas!.height / gridObj.cellSize);
+          gridObj.size.m = Math.floor(canvas!.width / gridObj.cellSize);
+        }
+        gridObj.grid = createNewGrid(gridObj.size.n, gridObj.size.m);
         setFlags((prev) => ({ ...prev, reset: false }));
       }
     }, [flags]);
 
     const initCanvas = () => {
       canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas) return false;
 
       ctx = canvas.getContext("2d");
-      if (!ctx) return;
+      if (!ctx) return false;
 
       rect = canvas.getBoundingClientRect();
 
@@ -193,6 +207,7 @@ const Canvas = memo(
 
       // prevent gaps between cells due to floating-point error
       ctx.globalCompositeOperation = "lighter";
+      return true;
     };
 
     const animate = (time: number) => {
@@ -200,12 +215,7 @@ const Canvas = memo(
       requestAnimationFrame(animate);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGrid(
-        ctx,
-        gridObj,
-        flagRef.current,
-        canvas.width / gridObj.size - flagRef.current.gap,
-      );
+      drawGrid(ctx, gridObj, flagRef.current);
 
       if (!flagRef.current.continue) {
         if (flagRef.current.step) {
@@ -245,18 +255,18 @@ const Canvas = memo(
         const [gridRow, gridCol] = getCoords(
           lerpX,
           lerpY,
-          gridObj.size,
-          canvas.width / gridObj.size - flagRef.current.gap,
+          gridObj,
           flagRef.current.gap,
         );
 
         if (
           gridCol >= 0 &&
           gridRow >= 0 &&
-          gridCol < gridObj.size &&
-          gridRow < gridObj.size
+          gridCol < gridObj.size.m &&
+          gridRow < gridObj.size.n
         ) {
           if (flagRef.current.draw) {
+            if (!gridObj.grid[gridRow][gridCol]) gridObj.cellCount++;
             gridObj.grid[gridRow][gridCol] = new Cell();
           } else {
             gridObj.grid[gridRow][gridCol] = null;
@@ -273,7 +283,7 @@ const Canvas = memo(
       mouseRef.current.startY = e.clientY - rect.top;
     };
 
-    return <canvas ref={canvasRef} />;
+    return <canvas className="grid" ref={canvasRef} />;
   },
 );
 

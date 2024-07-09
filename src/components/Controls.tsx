@@ -4,6 +4,7 @@ import { Flags } from "../App";
 import { createNewGrid, GridObject } from "./Canvas";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faBorderAll,
   faEraser,
   faForwardStep,
   faPause,
@@ -11,6 +12,8 @@ import {
   faPlay,
   faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
+import Button from "./Button";
+import Slider from "./Slider";
 
 const Controls = ({
   flags,
@@ -23,66 +26,71 @@ const Controls = ({
 }) => {
   return (
     <div className="bar">
-      <button
-        className={flags.draw ? "pressed" : ""}
-        onClick={() => setFlags((prev) => ({ ...prev, draw: true }))}
-      >
-        <FontAwesomeIcon icon={faPencil} />
-      </button>
-      <button
-        className={flags.draw ? "" : "pressed"}
-        onClick={() => setFlags((prev) => ({ ...prev, draw: false }))}
-      >
-        <FontAwesomeIcon icon={faEraser} />
-      </button>
-      <button
-        onClick={() =>
-          setFlags((prev) => ({ ...prev, continue: !prev.continue }))
-        }
-      >
-        <FontAwesomeIcon icon={flags.continue ? faPause : faPlay} />
-      </button>
-      <button onClick={() => setFlags((prev) => ({ ...prev, step: true }))}>
-        <FontAwesomeIcon icon={faForwardStep} />
-      </button>
-      <button
-        onClick={() =>
-          setFlags((prev) => ({ ...prev, reset: true, draw: true }))
-        }
-      >
-        <FontAwesomeIcon icon={faRotateLeft} />
-      </button>
-      <button
-        onClick={() =>
-          setFlags((prev) => {
-            return { ...prev, gap: prev.gap ? 0 : 1 };
-          })
-        }
-      >
-        {flags.gap ? "Hide Gap" : "Show Gap"}
-      </button>
-      <input
-        type="range"
-        min="1"
-        max="25"
-        step="1"
-        defaultValue={flags.fps}
-        onChange={(e) => {
-          setFlags((prev) => ({ ...prev, fps: parseInt(e.target.value) }));
+      <div className="bar-row">
+        <Button
+          fn={() => setFlags((prev) => ({ ...prev, draw: true }))}
+          toggleBy={flags.draw}
+        >
+          <FontAwesomeIcon icon={faPencil} />
+        </Button>
+        <Button
+          fn={() => setFlags((prev) => ({ ...prev, draw: false }))}
+          toggleBy={!flags.draw}
+        >
+          <FontAwesomeIcon icon={faEraser} />
+        </Button>
+        <Button
+          fn={() => setFlags((prev) => ({ ...prev, continue: !prev.continue }))}
+        >
+          <FontAwesomeIcon icon={flags.continue ? faPause : faPlay} />
+        </Button>
+        <Button fn={() => setFlags((prev) => ({ ...prev, step: true }))}>
+          <FontAwesomeIcon icon={faForwardStep} />
+        </Button>
+        <Button
+          fn={() => setFlags((prev) => ({ ...prev, reset: true, draw: true }))}
+        >
+          <FontAwesomeIcon icon={faRotateLeft} />
+        </Button>
+        <Button
+          fn={() => {
+            setFlags((prev) => ({ ...prev, gap: prev.gap ? 0 : 1 }));
+            gridObj.cellSize += flags.gap ? 1 : -1;
+          }}
+          toggleBy={flags.gap !== 0}
+        >
+          <FontAwesomeIcon icon={faBorderAll} />
+        </Button>
+      </div>
+      <Button
+        fn={() => {
+          setFlags((prev) => ({
+            ...prev,
+            maximise: !prev.maximise,
+            reset: prev.maximise ? false : true,
+          }));
         }}
-      ></input>
-      <input
-        type="range"
-        min="1"
-        max="200"
-        step="1"
-        defaultValue={gridObj.size}
-        onChange={(e) => {
-          gridObj.size = parseInt(e.target.value);
-          gridObj.grid = createNewGrid(gridObj.size);
-          setFlags((prev) => ({ ...prev, reset: true }));
+        toggleBy={flags.maximise}
+      >
+        Maximise Grid
+      </Button>
+      <Slider
+        min={1}
+        max={25}
+        val={flags.fps}
+        fn={(n: number) => {
+          setFlags((prev) => ({ ...prev, fps: n }));
         }}
-      ></input>
+      />
+      <Slider
+        min={5}
+        max={100}
+        val={gridObj.cellSize}
+        fn={(n: number) => {
+          gridObj.cellSize = n;
+          if (flags.maximise) setFlags((prev) => ({ ...prev, reset: true }));
+        }}
+      />
     </div>
   );
 };

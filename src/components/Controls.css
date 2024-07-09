@@ -1,7 +1,14 @@
 .bar {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
-  margin: 0.5rem;
+  width: 100%;
+}
+
+.bar-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .pressed {
