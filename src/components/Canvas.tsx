@@ -141,7 +141,7 @@ const updateGrid = (gridObj: GridObject) => {
         [i - 1, j + 1],
         [i + 1, j - 1],
         [i + 1, j + 1],
-      ];
+      ].sort(() => Math.random() - 0.5);
 
       for (const [x, y] of neighbours) {
         if (
@@ -153,6 +153,7 @@ const updateGrid = (gridObj: GridObject) => {
         ) {
           gridObj.grid[x][y] = new Cell();
           newCells[flattenCoords(x, y, gridObj.size)] = true;
+          break;
         }
       }
     }
