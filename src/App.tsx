@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 import Canvas, { createNewGrid, GridObject } from "./components/Canvas";
 import Controls from "./components/Controls";
@@ -6,33 +6,36 @@ import Controls from "./components/Controls";
 export type Flags = {
   continue: boolean;
   reset: boolean;
+  step: boolean;
   showGap: boolean;
   fps: number;
 };
 
 function App() {
-  const size = 100;
-  const [gridObj, setGrid] = useState<GridObject>({
+  const size = 50;
+  const [gridObj, setGridObj] = useState<GridObject>({
     grid: createNewGrid(size),
     size: size,
-    cellSize: (1 / size) * 800,
   });
   const [flags, setFlags] = useState<Flags>({
     continue: false,
     reset: false,
+    step: false,
     showGap: false,
-    fps: 1,
+    fps: 25,
   });
 
   return (
     <>
-      <Controls flags={flags} setFlags={setFlags} />
-      <Canvas
-        gridObj={gridObj}
-        setGrid={setGrid}
-        flags={flags}
-        setFlags={setFlags}
-      />
+      <Controls flags={flags} setFlags={setFlags} gridObj={gridObj} />
+      <div className="canvas-container">
+        <Canvas
+          gridObj={gridObj}
+          setGrid={setGridObj}
+          flags={flags}
+          setFlags={setFlags}
+        />
+      </div>
     </>
   );
 }

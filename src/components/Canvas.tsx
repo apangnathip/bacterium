@@ -5,7 +5,6 @@ import "./Canvas.css";
 export type GridObject = {
   grid: (Cell | null)[][];
   size: number;
-  cellSize: number;
 };
 
 export class Cell {
@@ -49,19 +48,17 @@ export const createNewGrid = (size: number) => {
   return rows;
 };
 
+// linear interpolation, a to b, by alpha
 const lerp = (a: number, b: number, alpha: number) => {
   return a * (1 - alpha) + b * alpha;
 };
 
-const getCenterOffset = (
-  length: number,
-  gridSize: number,
-  cellSize: number,
-  gap: number,
-) => {
-  return Math.round((length - gridSize * (cellSize + gap)) / 2);
+// flatten 2D coordinates to 1D
+const flattenCoords = (i: number, j: number, size: number) => {
+  return i * size + j;
 };
 
+// returns the equivalent grid coordinates of where the mouse is
 const getCoords = (
   x: number,
   y: number,
@@ -69,13 +66,9 @@ const getCoords = (
   cellSize: number,
   gap: number,
 ) => {
-  const offsetX = getCenterOffset(window.innerWidth, size, cellSize, gap);
-  const offsetY = getCenterOffset(window.innerHeight, size, cellSize, gap);
-
-  // convert mouseRef.current position to grid position, i.e. which cell the mouse is in
   const gridPixelSize = size * (cellSize + gap);
-  const gridCol = Math.floor(((x - offsetX) * size) / gridPixelSize);
-  const gridRow = Math.floor(((y - offsetY) * size) / gridPixelSize);
+  const gridCol = Math.floor((x * size) / gridPixelSize);
+  const gridRow = Math.floor((y * size) / gridPixelSize);
   return [gridRow, gridCol];
 };
 
@@ -85,19 +78,8 @@ const drawGrid = (
   gridObj: GridObject,
   flags: Flags,
 ) => {
-  const gap = flags.showGap ? 0.5 : 0;
-  const offsetX = getCenterOffset(
-    canvas.width,
-    gridObj.size,
-    gridObj.cellSize,
-    gap,
-  );
-  const offsetY = getCenterOffset(
-    canvas.height,
-    gridObj.size,
-    gridObj.cellSize,
-    gap,
-  );
+  const gap = flags.showGap ? 1 : 0;
+  const cellSize = canvas.width / gridObj.size - gap;
 
   for (let i = 0; i < gridObj.size; i++) {
     for (let j = 0; j < gridObj.size; j++) {
@@ -108,17 +90,13 @@ const drawGrid = (
       }
 
       ctx.fillRect(
-        j * (gridObj.cellSize + gap) + offsetX,
-        i * (gridObj.cellSize + gap) + offsetY,
-        gridObj.cellSize,
-        gridObj.cellSize,
+        j * (cellSize + gap),
+        i * (cellSize + gap),
+        cellSize,
+        cellSize,
       );
     }
   }
-};
-
-const flattenCoords = (i: number, j: number, size: number) => {
-  return i * size + j;
 };
 
 const updateGrid = (gridObj: GridObject) => {
@@ -186,29 +164,55 @@ const Canvas = memo(
 
     let canvas: HTMLCanvasElement | null;
     let ctx: CanvasRenderingContext2D | null;
+    let rect: DOMRect;
     let then: number;
 
     useEffect(() => {
+      initCanvas();
+      requestRef.current = requestAnimationFrame(animate);
+
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mousedown", (e) => {
+        mouseRef.current.isClicked = true;
+        handleMouseClick(e);
+      });
+      window.addEventListener("mouseup", (e) => {
+        mouseRef.current.isClicked = false;
+        handleMouseClick(e);
+      });
+
+      return () => {
+        cancelAnimationFrame(requestRef.current);
+        window.removeEventListener("mousemove", handleMouseMove);
+      };
+    }, []);
+
+    useEffect(() => {
+      initCanvas();
+      flagRef.current = flags;
+
+      if (flags.reset) {
+        gridObj.grid = createNewGrid(gridObj.size);
+        setFlags((prev) => ({ ...prev, reset: false }));
+      }
+    }, [flags]);
+
+    const initCanvas = () => {
       canvas = canvasRef.current;
       if (!canvas) return;
 
       ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      rect = canvas.getBoundingClientRect();
 
-      requestRef.current = requestAnimationFrame(animate);
-      return () => cancelAnimationFrame(requestRef.current);
-    }, []);
+      const scale = window.devicePixelRatio;
+      canvas.width = Math.round(canvasRef.current!.clientWidth * scale);
+      canvas.height = Math.round(canvasRef.current!.clientHeight * scale);
 
-    useEffect(() => {
-      flagRef.current = flags;
-      if (flags.reset) {
-        gridObj.grid = createNewGrid(gridObj.size);
-        setFlags((prev) => ({ ...prev, reset: false }));
-      }
-    }, [flags]);
+      // prevent gaps between cells due to floating-point error
+      ctx.globalCompositeOperation = "lighter";
+    };
 
     const animate = (time: number) => {
       if (!ctx || !canvas) return;
@@ -216,9 +220,15 @@ const Canvas = memo(
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid(canvas, ctx, gridObj, flags);
-      if (!flagRef.current.continue) return;
+
+      if (flagRef.current.step) {
+        updateGrid(gridObj);
+        flagRef.current.step = false;
+        return;
+      }
 
       // update grid by a set interval
+      if (!flagRef.current.continue) return;
       then = then ?? time;
       let delta = time - then;
       if (delta > 1000 / flagRef.current.fps) {
@@ -227,16 +237,18 @@ const Canvas = memo(
       }
     };
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-      mouseRef.current.x = e.clientX;
-      mouseRef.current.y = e.clientY;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!canvas || !mouseRef.current.isClicked) return;
 
-      if (!mouseRef.current.isClicked) return;
+      mouseRef.current.x = e.clientX - rect.left;
+      mouseRef.current.y = e.clientY - rect.top;
 
       let dist = Math.hypot(
         mouseRef.current.x - mouseRef.current.startX,
         mouseRef.current.y - mouseRef.current.startY,
       );
+
+      let gap = flags.showGap ? 1 : 0;
 
       for (let i = 0; i < dist; i++) {
         const lerpX =
@@ -249,8 +261,8 @@ const Canvas = memo(
           lerpX,
           lerpY,
           gridObj.size,
-          gridObj.cellSize,
-          flags.showGap ? 0.5 : 0,
+          canvas.width / gridObj.size - gap,
+          gap,
         );
 
         if (
@@ -274,23 +286,13 @@ const Canvas = memo(
       mouseRef.current.startY = mouseRef.current.y;
     };
 
-    const handleMouseClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-      mouseRef.current.isClicked = !mouseRef.current.isClicked;
+    const handleMouseClick = (e: MouseEvent) => {
       mouseRef.current.button = e.button;
-      mouseRef.current.startX = e.clientX;
-      mouseRef.current.startY = e.clientY;
+      mouseRef.current.startX = e.clientX - rect.left;
+      mouseRef.current.startY = e.clientY - rect.top;
     };
 
-    return (
-      <canvas
-        ref={canvasRef}
-        onMouseMove={handleMouseMove}
-        onMouseDown={handleMouseClick}
-        onMouseUp={handleMouseClick}
-        onMouseLeave={() => (mouseRef.current.isClicked = false)}
-        onContextMenu={(e) => e.preventDefault()}
-      />
-    );
+    return <canvas ref={canvasRef} />;
   },
 );
 
