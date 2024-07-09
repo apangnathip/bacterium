@@ -158,6 +158,9 @@ const Canvas = memo(
         mouseRef.current.isClicked = false;
         handleMouseClick(e);
       });
+      window.addEventListener("resize", () => {
+        rect = canvas!.getBoundingClientRect();
+      });
 
       return () => {
         cancelAnimationFrame(requestRef.current);
