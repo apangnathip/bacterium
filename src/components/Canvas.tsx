@@ -1,6 +1,12 @@
 import { memo, useEffect, useRef } from "react";
 import { Flags } from "../App";
 import "./Canvas.css";
+import {
+  flattenCoords,
+  getCoords,
+  lerpColor,
+  toRGBText,
+} from "../utils/helper";
 
 export type GridObject = {
   grid: (Cell | null)[][];
@@ -10,29 +16,22 @@ export type GridObject = {
 export class Cell {
   age: number;
   color: string;
-  grownColor: string;
-  birthColor: string;
+  grownColor: [number, number, number];
+  birthColor: [number, number, number];
   constructor() {
-    this.age = 1;
-    this.grownColor = "rgb(72, 46, 116)";
-    this.birthColor = "rgb(255, 193, 255)";
-    this.color = this.birthColor;
-  }
-
-  getColorByAge() {
-    const r = lerp(255, 72, this.age / 10);
-    const g = lerp(193, 46, this.age / 10);
-    const b = lerp(255, 116, this.age / 10);
-    return `rgb(${r}, ${g}, ${b})`;
+    this.age = 0;
+    this.grownColor = [72, 46, 116];
+    this.birthColor = [255, 193, 255];
+    this.color = toRGBText(this.birthColor);
   }
 
   update() {
-    if (this.age > 10) {
-      this.color = this.grownColor;
+    if (this.age >= 1) {
+      this.color = toRGBText(this.grownColor);
       return;
     }
-    this.color = this.getColorByAge();
-    this.age++;
+    this.color = lerpColor(this.birthColor, this.grownColor, this.age);
+    this.age += 0.1;
   }
 }
 
@@ -46,30 +45,6 @@ export const createNewGrid = (size: number) => {
     rows.push(row);
   }
   return rows;
-};
-
-// linear interpolation, a to b, by alpha
-const lerp = (a: number, b: number, alpha: number) => {
-  return a * (1 - alpha) + b * alpha;
-};
-
-// flatten 2D coordinates to 1D
-const flattenCoords = (i: number, j: number, size: number) => {
-  return i * size + j;
-};
-
-// returns the equivalent grid coordinates of where the mouse is
-const getCoords = (
-  x: number,
-  y: number,
-  size: number,
-  cellSize: number,
-  gap: number,
-) => {
-  const gridPixelSize = size * (cellSize + gap);
-  const gridCol = Math.floor((x * size) / gridPixelSize);
-  const gridRow = Math.floor((y * size) / gridPixelSize);
-  return [gridRow, gridCol];
 };
 
 const drawGrid = (
