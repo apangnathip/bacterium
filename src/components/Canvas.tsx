@@ -1,6 +1,5 @@
 import { memo, useEffect, useRef } from "react";
 import { Flags } from "../App";
-import "./Canvas.css";
 import {
   flattenCoords,
   getCoords,
@@ -8,6 +7,7 @@ import {
   shuffle,
   toRGBText,
 } from "../utils/helper";
+import "./Canvas.css";
 
 export type GridObject = {
   grid: (Cell | null)[][];
@@ -75,13 +75,15 @@ const drawGrid = (
 const updateGrid = (gridObj: GridObject) => {
   const newCells = {} as { [key: number]: boolean };
   const newGrid = createNewGrid(gridObj.size.n, gridObj.size.m);
+
   for (let i = 0; i < gridObj.size.n; i++) {
     for (let j = 0; j < gridObj.size.m; j++) {
       if (
         !gridObj.grid[i][j] ||
         flattenCoords(i, j, gridObj.size.m) in newCells
-      )
+      ) {
         continue;
+      }
 
       newGrid[i][j] = gridObj.grid[i][j];
       newGrid[i][j]!.update();
@@ -124,12 +126,10 @@ const Canvas = memo(
     gridObj,
     flags,
     setFlags,
-    updateCellCount,
   }: {
     gridObj: GridObject;
     flags: Flags;
     setFlags: React.Dispatch<React.SetStateAction<Flags>>;
-    updateCellCount: () => void;
   }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const requestRef = useRef(0);
@@ -214,7 +214,7 @@ const Canvas = memo(
       requestAnimationFrame(animate);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "gray";
+      ctx.fillStyle = "rgb(22, 22, 22)";
       ctx.fillRect(
         0,
         0,
@@ -272,7 +272,6 @@ const Canvas = memo(
           gridRow < gridObj.size.n
         ) {
           if (flagRef.current.draw) {
-            if (!gridObj.grid[gridRow][gridCol]) gridObj.cellCount++;
             gridObj.grid[gridRow][gridCol] = new Cell();
           } else {
             gridObj.grid[gridRow][gridCol] = null;
