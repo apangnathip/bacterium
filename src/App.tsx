@@ -23,7 +23,7 @@ function App() {
     step: false,
     draw: true,
     gap: 0,
-    fps: 15,
+    fps: 20,
   });
 
   const [gridObj, setGridObj] = useState<GridObject>({
@@ -31,12 +31,6 @@ function App() {
     size: { n: 0, m: 0 },
     cellSize: 20,
   });
-
-  const [cellCount, setCellCount] = useState(0);
-
-  const updateCellCount = () => {
-    setCellCount((prev) => prev + 1);
-  };
 
   return (
     <main>
@@ -48,15 +42,8 @@ function App() {
           </a>
         </div>
         <Controls flags={flags} setFlags={setFlags} gridObj={gridObj} />
-        <div>{cellCount}</div>
       </div>
-      <Canvas
-        gridObj={gridObj}
-        flags={flags}
-        setFlags={setFlags}
-        updateCellCount={updateCellCount}
-      />
-      {/* <Graph flags={flags} gridObj={gridObj} /> */}
+      <Canvas gridObj={gridObj} flags={flags} setFlags={setFlags} />
     </main>
   );
 }

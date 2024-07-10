@@ -1,16 +1,11 @@
 .canvas-container {
   display: flex;
-  width: 100%;
-  height: 100%;
-  justify-content: center;
   pointer-events: none;
+  width: 100%;
 }
 
 .grid {
   top: 0;
   left: 0;
   background-color: var(--primary);
-  /* width: 80vh; */
-  /* height: 80vh; */
-  /* height:100% */
 }
