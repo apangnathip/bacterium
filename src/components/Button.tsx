@@ -5,10 +5,12 @@ const Button = ({
   children,
   fn,
   toggleBy,
+  toolTipText,
 }: {
   children: ReactNode;
   fn: () => void;
   toggleBy?: boolean;
+  toolTipText?: string;
 }) => {
   let className = "";
   if (toggleBy !== undefined) {
@@ -16,6 +18,7 @@ const Button = ({
   }
   return (
     <button onClick={fn} className={className}>
+      <span className="tooltip">{toolTipText}</span>
       {children}
     </button>
   );

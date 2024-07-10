@@ -1,5 +1,52 @@
 button {
+  position: relative;
   min-width: 2.5rem;
   min-height: 2.5rem;
   font-size: 1.5rem;
+  background-color: var(--tertiary);
+  color: var(--secondary);
+  border: none;
+  border-radius: 0.5rem;
+}
+
+button:hover {
+  background-color: var(--highlight);
+  color: var(--tertiary);
+}
+
+button:active {
+  border: 2px solid var(--tertiary);
+}
+
+.pressed {
+  box-shadow: none;
+  color: var(--accent) !important;
+}
+
+.tooltip {
+  visibility: hidden;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  width: max-content;
+  background-color: var(--highlight);
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 0;
+  color: var(--tertiary);
+}
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 25%;
+  margin-left: -6px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--highlight) transparent transparent transparent;
+}
+
+button:hover .tooltip {
+  visibility: visible;
 }

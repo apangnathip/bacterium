@@ -5,27 +5,38 @@ const Slider = ({
   min,
   max,
   val,
-  fn,
+  text,
+  changeFn,
+  clickFn,
+  leaveFn,
 }: {
   min: number;
   max: number;
   val?: number;
-  fn: (n: number) => void;
+  text?: string;
+  changeFn: (n: number) => void;
+  clickFn?: () => void;
+  leaveFn?: () => void;
 }) => {
   const [value, setValue] = useState(val);
   useEffect(() => {
-    if (value) fn(value);
+    if (value) changeFn(value);
   }, [value]);
   return (
     <div className={"slider-container"}>
+      <span>{text}</span>
       <input
         className={"slider"}
         type="range"
         min={min}
         max={max}
         defaultValue={value}
-        onChange={(e) => {
-          setValue(parseInt(e.target.value));
+        onChange={(e) => setValue(parseInt(e.target.value))}
+        onMouseDown={() => {
+          if (clickFn) clickFn();
+        }}
+        onMouseUp={() => {
+          if (leaveFn) leaveFn();
         }}
       />
       <input

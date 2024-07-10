@@ -22,8 +22,8 @@ export class Cell {
   birthColor: [number, number, number];
   constructor() {
     this.age = 0;
-    this.grownColor = [72, 46, 116];
-    this.birthColor = [255, 193, 255];
+    this.grownColor = [52, 69, 93];
+    this.birthColor = [255, 255, 255];
     this.color = toRGBText(this.birthColor);
   }
 
@@ -57,7 +57,7 @@ const drawGrid = (
   for (let i = 0; i < gridObj.size.n; i++) {
     for (let j = 0; j < gridObj.size.m; j++) {
       if (!gridObj.grid[i][j]) {
-        ctx.fillStyle = `rgb(25, 23, 36)`;
+        ctx.fillStyle = "black";
       } else {
         ctx.fillStyle = gridObj.grid[i][j]!.color;
       }
@@ -179,13 +179,17 @@ const Canvas = memo(
     }, []);
 
     useEffect(() => {
-      initCanvas();
+      if (!initCanvas()) return;
       flagRef.current = flags;
 
       if (flagRef.current.reset) {
         if (flagRef.current.maximise) {
-          gridObj.size.n = Math.floor(canvas!.height / gridObj.cellSize);
-          gridObj.size.m = Math.floor(canvas!.width / gridObj.cellSize);
+          gridObj.size.n = Math.floor(
+            canvas!.height / (gridObj.cellSize + flagRef.current.gap),
+          );
+          gridObj.size.m = Math.floor(
+            canvas!.width / (gridObj.cellSize + flagRef.current.gap),
+          );
         }
         gridObj.grid = createNewGrid(gridObj.size.n, gridObj.size.m);
         setFlags((prev) => ({ ...prev, reset: false }));
@@ -204,9 +208,6 @@ const Canvas = memo(
       const scale = window.devicePixelRatio;
       canvas.width = Math.round(canvasRef.current!.clientWidth * scale);
       canvas.height = Math.round(canvasRef.current!.clientHeight * scale);
-
-      // prevent gaps between cells due to floating-point error
-      ctx.globalCompositeOperation = "lighter";
       return true;
     };
 
@@ -215,6 +216,13 @@ const Canvas = memo(
       requestAnimationFrame(animate);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "gray";
+      ctx.fillRect(
+        0,
+        0,
+        gridObj.size.m * (gridObj.cellSize + flagRef.current.gap),
+        gridObj.size.n * (gridObj.cellSize + flagRef.current.gap),
+      );
       drawGrid(ctx, gridObj, flagRef.current);
 
       if (!flagRef.current.continue) {
@@ -283,7 +291,11 @@ const Canvas = memo(
       mouseRef.current.startY = e.clientY - rect.top;
     };
 
-    return <canvas className="grid" ref={canvasRef} />;
+    return (
+      <div className="canvas-container">
+        <canvas className="grid" ref={canvasRef} />
+      </div>
+    );
   },
 );
 

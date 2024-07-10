@@ -2,14 +2,21 @@
   display: flex;
   justify-content: space-between;
   flex-direction: row;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+p {
+  width: 6rem;
 }
 
 .slider {
-  width: 100%;
+  width: 9rem;
+  accent-color: var(--accent);
 }
 
 .box {
   width: 4rem;
   height: 2rem;
+  padding: 0.25rem;
 }
