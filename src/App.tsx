@@ -37,7 +37,10 @@ function App() {
       <div className="panel">
         <div className="header">
           <span>Bacterium</span>
-          <a className="link-icon" href="">
+          <a
+            className="link-icon"
+            href="https://github.com/apangnathip/bacterium"
+          >
             <FontAwesomeIcon icon={faGithub} />
           </a>
         </div>
