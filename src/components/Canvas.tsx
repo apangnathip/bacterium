@@ -5,6 +5,7 @@ import {
   flattenCoords,
   getCoords,
   lerpColor,
+  shuffle,
   toRGBText,
 } from "../utils/helper";
 
@@ -12,7 +13,6 @@ export type GridObject = {
   grid: (Cell | null)[][];
   size: { n: number; m: number };
   cellSize: number;
-  cellCount: number;
 };
 
 export class Cell {
@@ -72,27 +72,21 @@ const drawGrid = (
   }
 };
 
-const shuffle = (arr: any[]) => {
-  let newArr = [];
-  let randomIndex = Math.floor(Math.random() * arr.length);
-  let element = arr.splice(randomIndex, 1);
-  newArr.push(element[0]);
-  return newArr;
-};
-
 const updateGrid = (gridObj: GridObject) => {
-  let newCells = {} as { [key: number]: boolean };
+  const newCells = {} as { [key: number]: boolean };
+  const newGrid = createNewGrid(gridObj.size.n, gridObj.size.m);
   for (let i = 0; i < gridObj.size.n; i++) {
     for (let j = 0; j < gridObj.size.m; j++) {
       if (
         !gridObj.grid[i][j] ||
-        flattenCoords(i, j, gridObj.size.n) in newCells
+        flattenCoords(i, j, gridObj.size.m) in newCells
       )
         continue;
 
-      gridObj.grid[i][j]!.update();
+      newGrid[i][j] = gridObj.grid[i][j];
+      newGrid[i][j]!.update();
 
-      let neighbours = shuffle([
+      let neighbours = [
         // cardinal directions
         [i - 1, j],
         [i + 1, j],
@@ -103,7 +97,9 @@ const updateGrid = (gridObj: GridObject) => {
         [i - 1, j + 1],
         [i + 1, j - 1],
         [i + 1, j + 1],
-      ]);
+      ];
+
+      shuffle(neighbours);
 
       for (const [x, y] of neighbours) {
         if (
@@ -113,14 +109,14 @@ const updateGrid = (gridObj: GridObject) => {
           y < gridObj.size.m &&
           !gridObj.grid[x][y]
         ) {
-          gridObj.grid[x][y] = new Cell();
-          gridObj.cellCount++;
-          newCells[flattenCoords(x, y, gridObj.size.n)] = true;
+          newGrid[x][y] = new Cell();
+          newCells[flattenCoords(x, y, gridObj.size.m)] = true;
           break;
         }
       }
     }
   }
+  gridObj.grid = newGrid;
 };
 
 const Canvas = memo(
@@ -128,10 +124,12 @@ const Canvas = memo(
     gridObj,
     flags,
     setFlags,
+    updateCellCount,
   }: {
     gridObj: GridObject;
     flags: Flags;
     setFlags: React.Dispatch<React.SetStateAction<Flags>>;
+    updateCellCount: () => void;
   }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const requestRef = useRef(0);

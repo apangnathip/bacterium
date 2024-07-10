@@ -20,6 +20,22 @@ export function lerpColor(
   return toRGBText([r, g, b]);
 }
 
+export function shuffle(array: any[]) {
+  var tmp,
+    current,
+    top = array.length;
+
+  if (top)
+    while (--top) {
+      current = Math.floor(Math.random() * (top + 1));
+      tmp = array[current];
+      array[current] = array[top];
+      array[top] = tmp;
+    }
+
+  return array;
+}
+
 // flatten 2D coordinates to 1D
 export function flattenCoords(i: number, j: number, size: number) {
   return i * size + j;
