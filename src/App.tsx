@@ -26,7 +26,7 @@ function App() {
     fps: 20,
   });
 
-  const [gridObj, setGridObj] = useState<GridObject>({
+  const [gridObj, _] = useState<GridObject>({
     grid: [],
     size: { n: 0, m: 0 },
     cellSize: 20,
